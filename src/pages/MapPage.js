@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { MOCK_STATIONS } from '../constants/stations';
+import stationService from '../services/stationService';
 import './MapPage.css';
 
 const MapPage = () => {
@@ -12,48 +13,65 @@ const MapPage = () => {
   const [locationError, setLocationError] = useState(null);
 
   const renderMarkers = useCallback((AMap, mapInstance, stationsList) => {
+    // 验证地图实例是否有效
+    if (!mapInstance || !AMap) {
+      console.warn('地图实例未初始化，无法渲染标记');
+      return;
+    }
+    
     stationsList.forEach((station) => {
-      const marker = new AMap.Marker({
-        position: [station.lng, station.lat],
-        title: station.location,
-        icon: station.available ? '🟢' : '🔴',
-        anchor: 'center'
-      });
-
-      marker.setMap(mapInstance);
-      marker.on('click', () => {
-        const infoWindow = new AMap.InfoWindow({
-          isCustom: true,
-          content: `
-            <div class="station-info">
-              <h3>${station.location}</h3>
-              <p>状态: ${station.available ? '可用' : '使用中'}</p>
-              <button onclick="alert('预约 ${station.location}')">预约</button>
-            </div>
-          `,
-          offset: [0, -30]
+      try {
+        const marker = new AMap.Marker({
+          position: [station.lng, station.lat],
+          title: station.location,
+          icon: station.available ? '🟢' : '🔴',
+          anchor: 'center'
         });
-        infoWindow.open(mapInstance, [station.lng, station.lat]);
-      });
+
+        marker.setMap(mapInstance);
+        marker.on('click', () => {
+          const infoWindow = new AMap.InfoWindow({
+            isCustom: true,
+            content: `
+              <div class="station-info">
+                <h3>${station.location}</h3>
+                <p>状态: ${station.available ? '可用' : '使用中'}</p>
+                <button onclick="alert('预约 ${station.location}')">预约</button>
+              </div>
+            `,
+            offset: [0, -30]
+          });
+          infoWindow.open(mapInstance, [station.lng, station.lat]);
+        });
+      } catch (error) {
+        console.error(`无法添加标记 ${station.location}:`, error);
+      }
     });
   }, []);
 
   const fetchStations = useCallback((AMap, mapInstance) => {
-    try {
-      // 实际应该从后端获取数据：
-      // const response = await fetch('http://localhost:8080/javaweb/stations');
-      // const data = await response.json();
-      // setStations(data);
-      
-      // 临时使用模拟数据
-      setStations(MOCK_STATIONS);
-      renderMarkers(AMap, mapInstance, MOCK_STATIONS);
-    } catch (error) {
-      console.error('获取充电站数据失败:', error);
-      // 加载失败时使用模拟数据
-      setStations(MOCK_STATIONS);
-      renderMarkers(AMap, mapInstance, MOCK_STATIONS);
+    if (!mapInstance || !AMap) {
+      console.warn('地图或 AMap 实例未准备好');
+      return;
     }
+    
+    // 使用新的服务层调用后端或模拟数据
+    const loadStations = async () => {
+      try {
+        const data = await stationService.getAllStations();
+        console.log('获取到充电站数据:', data);
+        setStations(data);
+        renderMarkers(AMap, mapInstance, data);
+      } catch (error) {
+        console.error('获取充电站数据失败:', error);
+        // 加载失败时使用模拟数据
+        console.log('使用模拟数据');
+        setStations(MOCK_STATIONS);
+        renderMarkers(AMap, mapInstance, MOCK_STATIONS);
+      }
+    };
+    
+    loadStations();
   }, [renderMarkers]);
 
   const handleLocate = useCallback(() => {
@@ -126,13 +144,26 @@ const MapPage = () => {
     // 加载高德地图
     const AMapLoader = window.AMapLoader;
     
+    if (!AMapLoader) {
+      console.error('AMapLoader 未加载');
+      return;
+    }
+    
     AMapLoader.load({
       key: '48101b9e67753cacaf46ba4af28ddcbc', // 您的高德地图 key
       version: '2.0',
       plugins: ['AMap.PlaceSearch', 'AMap.Marker']
     })
       .then((AMap) => {
+        console.log('地图加载成功');
         AMapRef.current = AMap;
+        
+        // 确保容器存在
+        if (!mapContainer.current) {
+          console.error('地图容器不存在');
+          return;
+        }
+        
         const mapInstance = new AMap.Map(mapContainer.current, {
           viewMode: '2D',
           zoom: 12,
@@ -140,9 +171,13 @@ const MapPage = () => {
         });
         
         mapRef.current = mapInstance;
+        console.log('地图实例创建成功');
 
-        // 从后端获取充电站数据
-        fetchStations(AMap, mapInstance);
+        // 等待地图完全加载后再添加标记
+        mapInstance.on('complete', () => {
+          console.log('地图完全加载完成，现在添加标记');
+          fetchStations(AMap, mapInstance);
+        });
       })
       .catch((e) => {
         console.error('地图加载失败:', e);

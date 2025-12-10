@@ -1,9 +1,10 @@
 import axios from 'axios';
+import { API_CONFIG, API_ENDPOINTS } from '../config/api.config';
 
 // 创建 axios 实例
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8080/javaweb',
-  timeout: 5000,
+  baseURL: API_CONFIG.baseURL,
+  timeout: API_CONFIG.timeout,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -13,25 +14,27 @@ const apiClient = axios.create({
 export const API = {
   // 充电站相关
   stations: {
-    getAll: () => apiClient.get('/stations'),
-    getById: (id) => apiClient.get(`/stations/${id}`),
-    search: (params) => apiClient.get('/stations/search', { params })
+    getAll: () => apiClient.get(API_ENDPOINTS.STATIONS.LIST),
+    getById: (id) => apiClient.get(API_ENDPOINTS.STATIONS.DETAIL(id)),
+    search: (params) => apiClient.get(API_ENDPOINTS.STATIONS.SEARCH, { params }),
+    getNearby: (latitude, longitude, radius = 5000) => 
+      apiClient.get(API_ENDPOINTS.STATIONS.NEARBY, { params: { latitude, longitude, radius } })
   },
   
   // 预约相关
   bookings: {
-    create: (data) => apiClient.post('/bookings', data),
-    getAll: () => apiClient.get('/bookings'),
-    getById: (id) => apiClient.get(`/bookings/${id}`),
-    update: (id, data) => apiClient.put(`/bookings/${id}`, data),
-    delete: (id) => apiClient.delete(`/bookings/${id}`)
+    create: (data) => apiClient.post(API_ENDPOINTS.BOOKINGS.CREATE, data),
+    getAll: () => apiClient.get(API_ENDPOINTS.BOOKINGS.LIST),
+    getById: (id) => apiClient.get(API_ENDPOINTS.BOOKINGS.DETAIL(id)),
+    update: (id, data) => apiClient.put(API_ENDPOINTS.BOOKINGS.UPDATE(id), data),
+    cancel: (id) => apiClient.post(API_ENDPOINTS.BOOKINGS.CANCEL(id))
   },
   
   // 用户相关
   users: {
-    getProfile: () => apiClient.get('/users/profile'),
-    updateProfile: (data) => apiClient.put('/users/profile', data),
-    recharge: (amount) => apiClient.post('/users/recharge', { amount })
+    getProfile: () => apiClient.get(API_ENDPOINTS.USERS.PROFILE),
+    updateProfile: (data) => apiClient.put(API_ENDPOINTS.USERS.UPDATE_PROFILE, data),
+    recharge: (amount) => apiClient.post(API_ENDPOINTS.USERS.RECHARGE, { amount })
   }
 };
 

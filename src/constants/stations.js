@@ -1,10 +1,10 @@
 // 充电站常量数据
 export const MOCK_STATIONS = [
-  { id: 1, location: '朝阳门', lat: 39.9173, lng: 116.4152, available: true },
-  { id: 2, location: '东直门', lat: 39.9496, lng: 116.4352, available: true },
-  { id: 3, location: '建国门', lat: 39.9110, lng: 116.4197, available: false },
-  { id: 4, location: '天安门广场', lat: 39.9075, lng: 116.3972, available: true },
-  { id: 5, location: '故宫', lat: 39.9246, lng: 116.3967, available: false }
+  { id: 1, stationId: 1, location: '朝阳门', lat: 39.9173, lng: 116.4152, available: true, price: 5.0, maxDuration: 8 },
+  { id: 2, stationId: 2, location: '东直门', lat: 39.9496, lng: 116.4352, available: true, price: 7.0, maxDuration: 12 },
+  { id: 3, stationId: 3, location: '建国门', lat: 39.9110, lng: 116.4197, available: false, price: 4.5, maxDuration: 6 },
+  { id: 4, stationId: 4, location: '天安门广场', lat: 39.9075, lng: 116.3972, available: true, price: 6.0, maxDuration: 10 },
+  { id: 5, stationId: 5, location: '故宫', lat: 39.9246, lng: 116.3967, available: false, price: 5.5, maxDuration: 8 }
 ];
 
 export const STATION_OPTIONS = [
