@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MOCK_STATIONS } from '../constants/stations';
 import stationService from '../services/stationService';
+import authService from '../services/authService';
 import './MapPage.css';
 
 const MapPage = () => {
@@ -11,6 +13,8 @@ const MapPage = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const navigate = useNavigate();
 
   const renderMarkers = useCallback((AMap, mapInstance, stationsList) => {
     // 验证地图实例是否有效
@@ -140,6 +144,22 @@ const MapPage = () => {
     );
   }, []);
 
+  const handleLogout = () => {
+    authService.logout();
+    navigate('/login');
+  };
+
+  useEffect(() => {
+    // Check if user is logged in
+    const user = authService.getCurrentUser();
+    if (!user) {
+      // Redirect to login if not authenticated
+      navigate('/login');
+    } else {
+      setCurrentUser(user);
+    }
+  }, [navigate]);
+
   useEffect(() => {
     // 加载高德地图
     const AMapLoader = window.AMapLoader;
@@ -187,18 +207,27 @@ const MapPage = () => {
   return (
     <div className="map-page">
       <div className="map-header">
-        <h1>充电站地图</h1>
-        <button 
-          className="locate-btn" 
-          onClick={handleLocate} 
-          disabled={locating}
-          title="定位到您的位置"
-        >
-          {locating ? '定位中...' : '📍 定位'}
-        </button>
+        <div className="header-left">
+          <h1>充电站地图</h1>
+          <button 
+            className="locate-btn" 
+            onClick={handleLocate} 
+            disabled={locating}
+            title="定位到您的位置"
+          >
+            {locating ? '定位中...' : '📍 定位'}
+          </button>
+        </div>
+        {currentUser && (
+          <div className="user-info">
+            <span className="user-name">欢迎, {currentUser.name}</span>
+            <span className="user-balance">余额: ${currentUser.balance.toFixed(2)}</span>
+            <button className="logout-btn" onClick={handleLogout}>登出</button>
+          </div>
+        )}
+      </div>
         {locationError && <div className="location-error">{locationError}</div>}
         {userLocation && <div className="location-success">已定位: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}</div>}
-      </div>
       <div ref={mapContainer} className="map-container"></div>
       <div className="stations-info">
         <h3>附近充电站 ({stations.length})</h3>

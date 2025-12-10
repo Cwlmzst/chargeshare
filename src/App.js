@@ -4,6 +4,7 @@ import BottomNav from './components/BottomNav';
 import './App.css';
 
 // 路由懒加载 - 提高初始加载速度
+const LoginPage = lazy(() => import('./pages/LoginPage'));
 const MapPage = lazy(() => import('./pages/MapPage'));
 const BookingPage = lazy(() => import('./pages/BookingPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
@@ -17,6 +18,7 @@ function App() {
       <div className="app-container">
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<MapPage />} />
             <Route path="/booking" element={<BookingPage />} />
             <Route path="/profile" element={<ProfilePage />} />
