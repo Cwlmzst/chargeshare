@@ -5,6 +5,7 @@ import './App.css';
 
 // 路由懒加载 - 提高初始加载速度
 const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const MapPage = lazy(() => import('./pages/MapPage'));
 const BookingPage = lazy(() => import('./pages/BookingPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
@@ -19,6 +20,7 @@ function App() {
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
             <Route path="/" element={<MapPage />} />
             <Route path="/booking" element={<BookingPage />} />
             <Route path="/profile" element={<ProfilePage />} />

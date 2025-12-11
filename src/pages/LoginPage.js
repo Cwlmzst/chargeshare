@@ -103,6 +103,7 @@ const LoginPage = () => {
           <div className="info-box">
             <p>👉 点击上方演示账户，或手动输入凭据</p>
             <p>🔑 演示账户默认密码: <strong>123456</strong></p>
+            <p>还没有账户？<button type="button" onClick={() => navigate('/register')} className="link-button">立即注册</button></p>
           </div>
         </div>
       </div>
