@@ -1,14 +1,17 @@
 import React, { useState, useCallback } from 'react';
+import authService from '../services/authService';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
+  const currentUser = authService.getCurrentUser();
+  
   const [user, setUser] = useState({
-    id: 1,
-    name: '张三',
-    email: 'zhangsan@example.com',
-    phone: '13800138000',
-    balance: 250,
-    registeredDate: '2025-01-01'
+    id: currentUser?.id || 1,
+    name: currentUser?.name || '张三',
+    email: currentUser?.email || 'zhangsan@example.com',
+    phone: currentUser?.phone || '13800138000',
+    balance: currentUser?.balance || 250,
+    registeredDate: currentUser?.registeredDate || '2025-01-01'
   });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -25,6 +28,9 @@ const ProfilePage = () => {
   const handleSave = useCallback(() => {
     setUser(editData);
     setIsEditing(false);
+    // 更新本地存储的用户信息
+    const updatedUser = { ...authService.getCurrentUser(), ...editData };
+    authService.setCurrentUser(updatedUser);
     alert('信息保存成功！');
   }, [editData]);
 
@@ -36,14 +42,27 @@ const ProfilePage = () => {
   const handleRecharge = useCallback(() => {
     const amount = prompt('请输入充值金额 (¥):');
     if (amount && !isNaN(amount) && amount > 0) {
-      const newBalance = parseFloat(user.balance) + parseFloat(amount);
+      const rechargeAmount = parseFloat(amount);
+      const newBalance = parseFloat(user.balance) + rechargeAmount;
       setUser(prev => ({
         ...prev,
         balance: newBalance
       }));
-      alert(`充值成功！已充值 ¥${amount}`);
+      
+      // 更新本地存储的用户信息
+      const updatedUser = { ...authService.getCurrentUser(), balance: newBalance };
+      authService.setCurrentUser(updatedUser);
+      
+      alert(`充值成功！已充值 ¥${rechargeAmount.toFixed(2)}`);
     }
   }, [user.balance]);
+
+  const handleLogout = useCallback(() => {
+    if (window.confirm('确定要退出登录吗？')) {
+      authService.logout();
+      window.location.href = '/login';
+    }
+  }, []);
 
   return (
     <div className="profile-page">
@@ -67,7 +86,7 @@ const ProfilePage = () => {
         <div className="balance-card">
           <div className="balance-info">
             <p className="label">账户余额</p>
-            <h3 className="amount">¥{user.balance.toFixed(2)}</h3>
+            <h3 className="amount">¥{parseFloat(user.balance).toFixed(2)}</h3>
           </div>
           <button onClick={handleRecharge} className="recharge-btn">
             充值
@@ -97,11 +116,11 @@ const ProfilePage = () => {
               </div>
               <div className="info-item">
                 <span className="label">电话</span>
-                <span className="value">{user.phone}</span>
+                <span className="value">{user.phone || '未设置'}</span>
               </div>
               <div className="info-item">
                 <span className="label">注册日期</span>
-                <span className="value">{user.registeredDate}</span>
+                <span className="value">{user.registeredDate || '未知'}</span>
               </div>
             </div>
           ) : (
@@ -129,7 +148,7 @@ const ProfilePage = () => {
                 <input 
                   type="tel"
                   name="phone"
-                  value={editData.phone}
+                  value={editData.phone || ''}
                   onChange={handleEditChange}
                 />
               </div>
@@ -166,7 +185,7 @@ const ProfilePage = () => {
         </div>
 
         {/* 退出登录 */}
-        <button className="logout-btn">
+        <button onClick={handleLogout} className="logout-btn">
           退出登录
         </button>
       </div>

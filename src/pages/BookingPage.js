@@ -1,5 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { STATION_OPTIONS, HOURLY_RATE, MAX_DURATION } from '../constants/stations';
+import stationService from '../services/stationService';
 import './BookingPage.css';
 
 const BookingPage = () => {
@@ -9,9 +10,29 @@ const BookingPage = () => {
     date: new Date().toISOString().split('T')[0]
   });
   const [bookings, setBookings] = useState([
-    { id: 1, station: '朝阳门', date: '2025-12-10', duration: 2, status: '进行中', cost: 50 },
-    { id: 2, station: '东直门', date: '2025-12-08', duration: 1, status: '已完成', cost: 25 }
+    { id: 1, station: '南京鼓楼充电站', date: '2025-12-10', duration: 2, status: '进行中', cost: 11.00 },
+    { id: 2, station: '南京玄武充电站', date: '2025-12-08', duration: 1, status: '已完成', cost: 3.50 }
   ]);
+  const [stations, setStations] = useState([]);
+
+  // 获取充电站列表
+  useEffect(() => {
+    const loadStations = async () => {
+      try {
+        const stationsData = await stationService.getAllStations();
+        setStations(stationsData);
+      } catch (error) {
+        console.error('获取充电站列表失败:', error);
+        // 使用默认的模拟数据
+        setStations(STATION_OPTIONS.map(option => ({
+          name: option.value,
+          pricePerHour: parseFloat(option.label.match(/¥([\d.]+)/)?.[1] || '5.50')
+        })));
+      }
+    };
+    
+    loadStations();
+  }, []);
 
   const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
@@ -29,8 +50,12 @@ const BookingPage = () => {
       return;
     }
 
+    // 获取选中充电站的价格
+    const selectedStation = stations.find(s => s.name === formData.station);
+    const hourlyRate = selectedStation?.pricePerHour || HOURLY_RATE;
+    
     // 计算费用
-    const cost = formData.duration * HOURLY_RATE;
+    const cost = formData.duration * hourlyRate;
 
     const newBooking = {
       id: bookings.length + 1,
@@ -51,7 +76,14 @@ const BookingPage = () => {
     });
 
     alert('预约成功！');
-  }, [formData.station, formData.duration, formData.date, bookings.length]);
+  }, [formData.station, formData.duration, formData.date, bookings.length, stations]);
+
+  // 获取选中充电站的价格用于显示
+  const getSelectedStationPrice = () => {
+    if (!formData.station) return HOURLY_RATE;
+    const selectedStation = stations.find(s => s.name === formData.station);
+    return selectedStation?.pricePerHour || HOURLY_RATE;
+  };
 
   return (
     <div className="booking-page">
@@ -72,8 +104,10 @@ const BookingPage = () => {
                 required
               >
                 <option value="">-- 选择充电站 --</option>
-                {STATION_OPTIONS.map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
+                {stations.map(station => (
+                  <option key={station.name || station.id} value={station.name}>
+                    {station.name} - ¥{station.pricePerHour || station.price || HOURLY_RATE}/小时
+                  </option>
                 ))}
               </select>
             </div>
@@ -103,13 +137,13 @@ const BookingPage = () => {
                   type="button"
                   onClick={() => setFormData(prev => ({
                     ...prev,
-                    duration: Math.min(12, prev.duration + 1)
+                    duration: Math.min(MAX_DURATION, prev.duration + 1)
                   }))}
                 >
                   +
                 </button>
               </div>
-              <p className="form-help">预计费用: ¥{formData.duration * HOURLY_RATE}</p>
+              <p className="form-help">预计费用: ¥{(formData.duration * getSelectedStationPrice()).toFixed(2)}</p>
             </div>
 
             <div className="form-group">
@@ -141,7 +175,7 @@ const BookingPage = () => {
                     <h3>{booking.station}</h3>
                     <p>日期: {booking.date}</p>
                     <p>时长: {booking.duration} 小时</p>
-                    <p>费用: ¥{booking.cost}</p>
+                    <p>费用: ¥{booking.cost.toFixed(2)}</p>
                   </div>
                   <div className={`booking-status ${booking.status === '进行中' ? 'active' : 'completed'}`}>
                     {booking.status}
