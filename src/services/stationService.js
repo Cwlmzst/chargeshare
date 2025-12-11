@@ -54,6 +54,9 @@ export const getAllStations = async () => {
     console.log('调用真实API获取充电站列表');
     const response = await API.stations.getAll();
     
+    // 添加日志查看原始响应数据
+    console.log('API返回的原始数据:', response);
+    
     // 转换数据格式以保持一致性
     const transformedStations = response.data.map(station => ({
       ...station,
@@ -61,6 +64,9 @@ export const getAllStations = async () => {
       latitude: station.lat,  // 为向后兼容保留latitude字段
       longitude: station.lng  // 为向后兼容保留longitude字段
     }));
+    
+    // 添加日志查看转换后的数据
+    console.log('转换后的充电站数据:', transformedStations);
     
     return transformedStations;
   } catch (error) {
@@ -207,6 +213,9 @@ export const getNearbyStations = async (latitude, longitude, radius = 5000) => {
     // 调用真实API获取附近充电站
     const response = await API.stations.getNearby(latitude, longitude, radius);
     
+    // 添加日志查看原始响应数据
+    console.log('附近充电站API返回的原始数据:', response);
+    
     // 转换数据格式以保持一致性，并添加距离信息
     const transformedStations = response.data.map(station => ({
       ...station,
@@ -215,6 +224,9 @@ export const getNearbyStations = async (latitude, longitude, radius = 5000) => {
       longitude: station.lng, // 为向后兼容保留longitude字段
       distance: station.distance // 保留API返回的距离
     }));
+    
+    // 添加日志查看转换后的数据
+    console.log('附近充电站转换后的数据:', transformedStations);
     
     return transformedStations;
   } catch (error) {

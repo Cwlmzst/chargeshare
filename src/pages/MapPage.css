@@ -301,3 +301,13 @@
   display: block !important;
   visibility: visible !important;
 }
+
+.no-stations-message {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  padding: 20px;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+  margin: 10px 0;
+}

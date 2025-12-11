@@ -36,6 +36,9 @@ const MapPage = () => {
       return;
     }
     
+    // 添加日志查看传入的充电站数据
+    console.log('renderMarkers 接收到的充电站数据:', stationsList);
+    
     // 清除现有标记
     mapInstance.clearMap();
     
@@ -110,12 +113,18 @@ const MapPage = () => {
       if (userLocation) {
         // 如果有用户位置，获取附近的充电站
         data = await stationService.getNearbyStations(userLocation.lat, userLocation.lng, 5000);
+        // 如果附近没有充电站，则获取所有充电站
+        if (!data || data.length === 0) {
+          console.log('附近没有充电站，获取所有充电站');
+          data = await stationService.getAllStations();
+        }
       } else {
         // 否则获取所有充电站
         data = await stationService.getAllStations();
       }
       
-      console.log('获取到充电站数据:', data);
+      // 添加日志查看获取到的数据
+      console.log('fetchStations 获取到的数据:', data);
       setStations(data);
       renderMarkers(AMap, mapInstance, data);
     } catch (error) {
@@ -258,12 +267,23 @@ const MapPage = () => {
     // 只在组件初始化时或者明确需要刷新时执行，避免重复调用
     // 这个effect可能会导致面板消失的问题，所以我们添加一个检查
     if (userLocation && AMapRef.current && mapRef.current) {
+      // 添加日志查看用户位置
+      console.log('用户位置改变，当前用户位置:', userLocation);
+      
       // 添加一个小延迟确保地图完全初始化
       const timer = setTimeout(() => {
         // 直接获取数据并渲染，避免状态更新的延迟问题
         stationService.getNearbyStations(userLocation.lat, userLocation.lng, 5000)
           .then(data => {
             console.log('用户位置变化，获取到附近充电站数据:', data);
+            // 如果附近没有充电站，则获取所有充电站
+            if (!data || data.length === 0) {
+              console.log('附近没有充电站，获取所有充电站');
+              return stationService.getAllStations();
+            }
+            return data;
+          })
+          .then(data => {
             setStations(data);
             renderMarkers(AMapRef.current, mapRef.current, data);
           })
@@ -309,8 +329,14 @@ const MapPage = () => {
       <div className="stations-panel">
         <div className="stations-info">
           <h3>附近充电站 ({stations.length})</h3>
+          {stations.length === 0 ? (
+            <p className="no-stations-message">附近暂无充电站，显示所有充电站。</p>
+          ) : null}
           <div className="stations-list">
             {stations.map((station) => {
+              // 添加日志查看每个充电站的详细信息
+              console.log('渲染充电站:', station);
+              
               // 计算距离
               let distanceText = '距离未知';
               if (userLocation && (station.lat || station.latitude) && (station.lng || station.longitude)) {
